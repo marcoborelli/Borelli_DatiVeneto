@@ -23,73 +23,71 @@ namespace Borelli_DatiVeneto
         private void textBox14_TextChanged(object sender, EventArgs e)
         {
             string testo = textBox14.Text.ToUpper();
-            var f = new FileStream(@"veneto_verona.csv", FileMode.Open, FileAccess.ReadWrite);
-            BinaryReader reader = new BinaryReader(f);
 
-            f.Seek(0, SeekOrigin.Begin);
-            string linetot = "";
-            bool helo = true;
-
-            while (helo) //trovo quanto è lunga una riga
+            if (testo != "")
             {
-                byte[] temp = reader.ReadBytes(1);
-                linetot += Encoding.ASCII.GetString(temp);
-                if (temp[0] == '\n')
-                    helo = false;
+                var f = new FileStream(@"veneto_verona.csv", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                BinaryReader reader = new BinaryReader(f);
+
+                f.Seek(0, SeekOrigin.Begin);
+                string linetot = "";
+                bool helo = true;
+
+                while (helo) //trovo quanto è lunga una riga
+                {
+                    byte[] temp = reader.ReadBytes(1);
+                    linetot += Encoding.ASCII.GetString(temp);
+                    if (temp[0] == '\n')//perchè ultimo carattere è andare a capo
+                        helo = false;
+                }
+
+                int numm = linetot.Length;
+                int m, i = 0, j = Convert.ToInt32(f.Length / numm), pos = -1;// m=inizio, j=fine
+
+                do //trovo il primo record
+                {
+                    m = (i + j) / 2;//così trovo solo la riga intermedia, non la posizione di byte intermedia perchè sennò potrei finire in mezzo a una riga a caso
+                    f.Seek(m * numm, SeekOrigin.Begin);
+
+                    string temp = Encoding.ASCII.GetString(reader.ReadBytes(numm));
+
+                    if (myCompare(temp.Split(';')[0], testo) == 0)
+                        pos = m * numm;
+                    else if (myCompare(temp.Split(';')[0], testo) == -1)
+                        i = m + 1;
+                    else
+                        j = m - 1;
+
+                } while (i <= j && pos == -1);
+
+                if (pos != -1)//se non ha trovato nessun risultato
+                {
+                    f.Seek(pos, SeekOrigin.Begin);
+
+                    string tempp = Encoding.ASCII.GetString(reader.ReadBytes(numm)); //lo rileggo
+                    string[] fields = tempp.Split(';');
+
+                    TextBox[] provaPerOttimizzare = new TextBox[] { textBox1, textBox2, textBox3, textBox4, textBox5, textBox6, textBox7, textBox8, textBox9, textBox10, textBox11, textBox12, textBox13 };
+                    int[] indiciValidi = new int[] { 0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 };//sono solo gli indici della split con dei campi utili da stampare
+
+                    for (int t = 0; t < provaPerOttimizzare.Length; t++)
+                        provaPerOttimizzare[t].Text = fields[indiciValidi[t]];
+                }
+                f.Close();
             }
-
-            int numm = linetot.Length;
-            int m, i = 0, j = Convert.ToInt32(f.Length / numm), pos = -1;// m=inizio, j=fine
-
-            do //trovo il primo record
-            {
-                m = (i + j) / 2;//così trovo solo la riga intermedia, non la posizione di byte intermedia
-                f.Seek(m * numm, SeekOrigin.Begin);
-
-                string temp = Encoding.ASCII.GetString(reader.ReadBytes(numm));
-
-                if (myCompare(temp.Split(';')[0], testo) == 0)
-                    pos = m*numm;
-                else if (myCompare(temp.Split(';')[0], testo) == -1)
-                    i = m + 1;
-                else
-                    j = m - 1;
-
-            } while (i <= j && pos == -1);
-
-            f.Seek(pos, SeekOrigin.Begin);
-            string tempp = Encoding.ASCII.GetString(reader.ReadBytes(numm)); //lo rileggo
-
-            string[] fields = tempp.Split(';');
-
-            textBox1.Text = fields[0];
-            textBox2.Text = fields[1];
-            textBox3.Text = fields[3];
-            textBox4.Text = fields[4];
-            textBox5.Text = fields[6];
-            textBox6.Text = fields[7];
-            textBox7.Text = fields[8];
-            textBox8.Text = fields[9];
-            textBox9.Text = fields[10];
-            textBox10.Text = fields[11];
-            textBox11.Text = fields[12];
-            textBox12.Text = fields[13];
-            textBox13.Text = fields[14];
-
-            f.Close();
-
+            else//sennò cancello
+                textBox1.Text = textBox2.Text = textBox3.Text = textBox4.Text = textBox5.Text = textBox6.Text = textBox7.Text = textBox8.Text = textBox9.Text = textBox10.Text = textBox11.Text = textBox12.Text = textBox13.Text = null;
         }
         static int myCompare(string stringa1, string stringa2)
         {
-            if (stringa1 == stringa2)//0=sono uguali -1=stringa viene prima 1=stringa viene dopo
+            if (stringa1 == stringa2)//0=sono uguali 1=stringa viene prima -1=stringa viene dopo
                 return 0;
 
             char[] char1 = stringa1.ToCharArray();
             char[] char2 = stringa2.ToCharArray();
             int l = char1.Length;
-            if (char2.Length < l)
+            if (char2.Length < l)//in l c'è la lunghezza più piccola
                 l = char2.Length;
-            //in l c'è la lunghezza più piccola
 
             for (int i = 0; i < l; i++)
             {
@@ -99,7 +97,7 @@ namespace Borelli_DatiVeneto
                     return 1;
             }
 
-            return 0;//visto che qui non mi interessa lunghezza allora mi basta ch la prima parte si uguale
+            return 0;//visto che qui non mi interessa lunghezza allora mi basta che la prima parte si uguale
         }
 
     }
