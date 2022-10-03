@@ -14,6 +14,7 @@ namespace Borelli_DatiVeneto
 {
     public partial class Form1 : Form
     {
+        string filename = @"veneto_verona.csv";
         public Form1()
         {
             InitializeComponent();
@@ -22,44 +23,14 @@ namespace Borelli_DatiVeneto
 
         private void textBox14_TextChanged(object sender, EventArgs e)
         {
-            string testo = textBox14.Text.ToUpper();
+            int pos = -1;
 
-            if (testo != "")
+            if (textBox14.Text.ToUpper() != "")
             {
-                var f = new FileStream(@"veneto_verona.csv", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                int numm = TrovaNUMM(filename, '\n');
+                pos = Posizione(textBox14.Text.ToUpper(), @"veneto_verona.csv");
+                var f = new FileStream(filename, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                 BinaryReader reader = new BinaryReader(f);
-
-                f.Seek(0, SeekOrigin.Begin);
-                string linetot = "";
-                bool helo = true;
-
-                while (helo) //trovo quanto è lunga una riga
-                {
-                    byte[] temp = reader.ReadBytes(1);
-                    linetot += Encoding.ASCII.GetString(temp);
-                    if (temp[0] == '\n')//perchè ultimo carattere è andare a capo
-                        helo = false;
-                }
-
-                int numm = linetot.Length;
-                int m, i = 0, j = Convert.ToInt32(f.Length / numm), pos = -1;// m=inizio, j=fine
-
-                do //trovo il primo record
-                {
-                    m = (i + j) / 2;//così trovo solo la riga intermedia, non la posizione di byte intermedia perchè sennò potrei finire in mezzo a una riga a caso
-                    f.Seek(m * numm, SeekOrigin.Begin);
-
-                    string temp = Encoding.ASCII.GetString(reader.ReadBytes(numm));
-
-                    if (myCompare(temp.Split(';')[0], testo) == 0)
-                        pos = m * numm;
-                    else if (myCompare(temp.Split(';')[0], testo) == -1)
-                        i = m + 1;
-                    else
-                        j = m - 1;
-
-                } while (i <= j && pos == -1);
-
                 if (pos != -1)//se non ha trovato nessun risultato
                 {
                     f.Seek(pos, SeekOrigin.Begin);
@@ -77,6 +48,53 @@ namespace Borelli_DatiVeneto
             }
             else//sennò cancello
                 textBox1.Text = textBox2.Text = textBox3.Text = textBox4.Text = textBox5.Text = textBox6.Text = textBox7.Text = textBox8.Text = textBox9.Text = textBox10.Text = textBox11.Text = textBox12.Text = textBox13.Text = null;
+        }
+        public static int TrovaNUMM(string filename,char ultimo)
+        {
+            string linetot = "";
+            var f = new FileStream(filename, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            BinaryReader reader = new BinaryReader(f);
+
+            while (true) //trovo quanto è lunga una riga
+            {
+                byte[] temp = reader.ReadBytes(1);
+                linetot += Encoding.ASCII.GetString(temp);
+                if (temp[0] == '\n')//perchè ultimo carattere è andare a capo
+                    break;
+            }
+
+            f.Close();
+
+            return linetot.Length;
+        }
+        public static int Posizione(string testo,string filename)
+        {
+            int numm = TrovaNUMM(filename, '\n');
+
+            var f = new FileStream(filename, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            BinaryReader reader = new BinaryReader(f);
+
+            f.Seek(0, SeekOrigin.Begin);
+
+            int m, i = 0, j = Convert.ToInt32(f.Length / numm), pos = -1;// m=inizio, j=fine
+
+            do //trovo il primo record
+            {
+                m = (i + j) / 2;//così trovo solo la riga intermedia, non la posizione di byte intermedia perchè sennò potrei finire in mezzo a una riga a caso
+                f.Seek(m * numm, SeekOrigin.Begin);
+
+                string temp = Encoding.ASCII.GetString(reader.ReadBytes(numm));
+
+                if (myCompare(temp.Split(';')[0], testo) == 0)
+                    pos = m * numm;
+                else if (myCompare(temp.Split(';')[0], testo) == -1)
+                    i = m + 1;
+                else
+                    j = m - 1;
+
+            } while (i <= j && pos == -1);
+            f.Close();
+            return pos;
         }
         static int myCompare(string stringa1, string stringa2)
         {
